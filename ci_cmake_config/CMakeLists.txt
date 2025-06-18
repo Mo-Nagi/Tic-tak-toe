@@ -27,6 +27,7 @@ include_directories(${CMAKE_SOURCE_DIR}/../GUI/include)
 set(CORE_LIB_SOURCES
     ${CMAKE_SOURCE_DIR}/../core/src/GameBoard.cpp
     ${CMAKE_SOURCE_DIR}/../core/src/GameHistory.cpp
+    ${CMAKE_SOURCE_DIR}/../core/src/GameStateStack.cpp
     ${CMAKE_SOURCE_DIR}/../core/src/AIPlayer.cpp
 )
 add_library(game_core STATIC ${CORE_LIB_SOURCES})
@@ -41,6 +42,10 @@ if(ENABLE_TESTING)
     add_executable(gamehistory_test ${CMAKE_SOURCE_DIR}/../tests/unit_tests/GameHistory_test.cpp)
     target_link_libraries(gamehistory_test game_core gtest gtest_main)
     add_test(NAME GameHistoryTest COMMAND gamehistory_test)
+
+    add_executable(gamestack_test ${CMAKE_SOURCE_DIR}/../tests/unit_tests/GameStateStack_test.cpp)
+    target_link_libraries(gamestack_test game_core gtest gtest_main)
+    add_test(NAME GameStackTest COMMAND gamestack_test)
 
     add_executable(AIPlayer_test_test ${CMAKE_SOURCE_DIR}/../tests/unit_tests/AIPlayer_test.cpp)
     target_link_libraries(AIPlayer_test_test game_core gtest gtest_main)
