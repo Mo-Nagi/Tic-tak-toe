@@ -1,0 +1,145 @@
+        -:    0:Source:E:/TicTacToe_Clean/core/src/UserManager.cpp
+        -:    0:Graph:./UserManager.gcno
+        -:    0:Data:./UserManager.gcda
+        -:    0:Runs:2
+        -:    1:#include "UserManager.h"
+        -:    2:#include <algorithm>
+        -:    3:
+    18180:    4:UserHashTable::UserHashTable() {
+      180:    5:    loadUsers();
+      180:    6:}
+        -:    7:
+    18180:    8:UserHashTable::~UserHashTable() {
+      180:    9:    saveUsers();
+    18180:   10:}
+        -:   11:
+    25412:   12:int UserHashTable::hashFunction(const std::string& key) {
+        -:   13:    std::hash<std::string> hasher;
+    25412:   14:    return hasher(key) % BUCKET_SIZE;
+        -:   15:}
+        -:   16:
+     2844:   17:bool UserHashTable::insertUser(const std::string& username, const std::string& passwordHash) {
+     2844:   18:    if (userExists(username)) {
+        2:   19:        return false;
+        -:   20:    }
+        -:   21:
+     2842:   22:    int index = hashFunction(username);
+     2842:   23:    User newUser(username, passwordHash);
+     2842:   24:    table[index].emplace_back(username, newUser);
+     2842:   25:    saveUsers();
+     2842:   26:    return true;
+     2842:   27:}
+        -:   28:
+      292:   29:bool UserHashTable::authenticateUser(const std::string& username, const std::string& passwordHash) {
+      292:   30:    int index = hashFunction(username);
+        -:   31:
+      384:   32:    for (const auto& pair : table[index]) {
+      370:   33:        if (pair.first == username && pair.second.passwordHash == passwordHash) {
+      278:   34:            return true;
+        -:   35:        }
+        -:   36:    }
+       14:   37:    return false;
+        -:   38:}
+        -:   39:
+     3172:   40:bool UserHashTable::userExists(const std::string& username) {
+     3172:   41:    int index = hashFunction(username);
+        -:   42:
+    13344:   43:    for (const auto& pair : table[index]) {
+    10484:   44:        if (pair.first == username) {
+      312:   45:            return true;
+        -:   46:        }
+        -:   47:    }
+     2860:   48:    return false;
+        -:   49:}
+        -:   50:
+       18:   51:void UserHashTable::removeUser(const std::string& username) {
+       18:   52:    int index = hashFunction(username);
+        -:   53:
+       18:   54:    auto& bucket = table[index];
+       18:   55:    bucket.remove_if([&username](const std::pair<std::string, User>& pair) {
+       14:   56:        return pair.first == username;
+        -:   57:    });
+       18:   58:    saveUsers();
+       18:   59:}
+        -:   60:
+     8364:   61:User* UserHashTable::getUser(const std::string& username) {
+     8364:   62:    int index = hashFunction(username);
+        -:   63:
+     9590:   64:    for (auto& pair : table[index]) {
+     9584:   65:        if (pair.first == username) {
+     8358:   66:            return &pair.second;
+        -:   67:        }
+        -:   68:    }
+        6:   69:    return nullptr;
+        -:   70:}
+        -:   71:
+     8114:   72:void UserHashTable::updateUser(const std::string& username, const User& user) {
+     8114:   73:    int index = hashFunction(username);
+        -:   74:
+     9316:   75:    for (auto& pair : table[index]) {
+     9314:   76:        if (pair.first == username) {
+     8112:   77:            pair.second = user;
+     8112:   78:            saveUsers();
+     8112:   79:            return;
+        -:   80:        }
+        -:   81:    }
+        -:   82:}
+        -:   83:
+       18:   84:std::vector<std::string> UserHashTable::getAllUsers() {
+       18:   85:    std::vector<std::string> users;
+     1818:   86:    for (int i = 0; i < BUCKET_SIZE; i++) {
+     3878:   87:        for (const auto& pair : table[i]) {
+     2078:   88:            users.push_back(pair.first);
+        -:   89:        }
+        -:   90:    }
+       18:   91:    return users;
+    =====:   92:}
+        -:   93:
+      180:   94:void UserHashTable::loadUsers() {
+      180:   95:    std::ifstream file("users.dat");
+      180:   96:    if (!file.is_open()) {
+       68:   97:        return;
+        -:   98:    }
+        -:   99:
+      112:  100:    std::string line;
+     2730:  101:    while (std::getline(file, line)) {
+     2618:  102:        std::istringstream iss(line);
+     2618:  103:        std::string username, passwordHash;
+        -:  104:        int gamesPlayed, gamesWon, gamesLost, gamesTied;
+        -:  105:
+     2618:  106:        if (iss >> username >> passwordHash >> gamesPlayed >> gamesWon >> gamesLost >> gamesTied) {
+     2610:  107:            User user(username, passwordHash);
+     2610:  108:            user.gamesPlayed = gamesPlayed;
+     2610:  109:            user.gamesWon = gamesWon;
+     2610:  110:            user.gamesLost = gamesLost;
+     2610:  111:            user.gamesTied = gamesTied;
+        -:  112:
+     2610:  113:            int index = hashFunction(username);
+     2610:  114:            table[index].emplace_back(username, user);
+     2610:  115:        }
+     2618:  116:    }
+      112:  117:    file.close();
+      180:  118:}
+        -:  119:
+    11152:  120:void UserHashTable::saveUsers() {
+    11152:  121:    std::ofstream file("users.dat");
+    11152:  122:    if (!file.is_open()) {
+    #####:  123:        return;
+        -:  124:    }
+        -:  125:
+  1126352:  126:    for (int i = 0; i < BUCKET_SIZE; i++) {
+  2409970:  127:        for (const auto& pair : table[i]) {
+  1294770:  128:            const User& user = pair.second;
+  1294770:  129:            file << user.username << " " << user.passwordHash << " "
+  1294770:  130:                 << user.gamesPlayed << " " << user.gamesWon << " "
+  1294770:  131:                 << user.gamesLost << " " << user.gamesTied << "\n";
+        -:  132:        }
+        -:  133:    }
+    11152:  134:    file.close();
+    11152:  135:}
+        -:  136:
+       98:  137:void UserHashTable::clear() {
+     9898:  138:    for (int i = 0; i < BUCKET_SIZE; i++) {
+     9800:  139:        table[i].clear();
+        -:  140:    }
+       98:  141:}
