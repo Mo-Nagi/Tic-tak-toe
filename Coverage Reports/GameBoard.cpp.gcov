@@ -1,0 +1,94 @@
+        -:    0:Source:E:/TicTacToe_Clean/core/src/GameBoard.cpp
+        -:    0:Graph:./GameBoard.gcno
+        -:    0:Data:./GameBoard.gcda
+        -:    0:Runs:2
+        -:    1:#include "GameBoard.h"
+        -:    2:
+      308:    3:GameBoard::GameBoard() : board(BOARD_SIZE, std::vector<char>(BOARD_SIZE, ' ')) {}
+        -:    4:
+     4584:    5:void GameBoard::reset() {
+    18336:    6:    for (int i = 0; i < BOARD_SIZE; i++) {
+    55008:    7:        for (int j = 0; j < BOARD_SIZE; j++) {
+    41256:    8:            board[i][j] = ' ';
+        -:    9:        }
+        -:   10:    }
+     4584:   11:}
+        -:   12:
+  7722360:   13:bool GameBoard::makeMove(int row, int col, char player) {
+  7722360:   14:    if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE && board[row][col] == ' ') {
+  7722284:   15:        board[row][col] = player;
+  7722284:   16:        return true;
+        -:   17:    }
+       76:   18:    return false;
+        -:   19:}
+        -:   20:
+ 31573526:   21:char GameBoard::getCell(int row, int col) const {
+ 31573526:   22:    if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
+ 31573526:   23:        return board[row][col];
+        -:   24:    }
+    #####:   25:    return ' ';
+        -:   26:}
+        -:   27:
+  7727070:   28:GameResult GameBoard::checkWin() const {
+        -:   29:    // Check rows
+ 29085499:   30:    for (int i = 0; i < BOARD_SIZE; i++) {
+ 22430278:   31:        if (board[i][0] != ' ' && board[i][0] == board[i][1] && board[i][1] == board[i][2]) {
+  1071849:   32:            return (board[i][0] == 'X') ? GameResult::PLAYER1_WIN : GameResult::PLAYER2_WIN;
+        -:   33:        }
+        -:   34:    }
+        -:   35:
+        -:   36:    // Check columns
+ 25029684:   37:    for (int j = 0; j < BOARD_SIZE; j++) {
+ 19235596:   38:        if (board[0][j] != ' ' && board[0][j] == board[1][j] && board[1][j] == board[2][j]) {
+   861133:   39:            return (board[0][j] == 'X') ? GameResult::PLAYER1_WIN : GameResult::PLAYER2_WIN;
+        -:   40:        }
+        -:   41:    }
+        -:   42:
+        -:   43:    // Check diagonals
+  5794088:   44:    if (board[0][0] != ' ' && board[0][0] == board[1][1] && board[1][1] == board[2][2]) {
+   404158:   45:        return (board[0][0] == 'X') ? GameResult::PLAYER1_WIN : GameResult::PLAYER2_WIN;
+        -:   46:    }
+  5389930:   47:    if (board[0][2] != ' ' && board[0][2] == board[1][1] && board[1][1] == board[2][0]) {
+   323616:   48:        return (board[0][2] == 'X') ? GameResult::PLAYER1_WIN : GameResult::PLAYER2_WIN;
+        -:   49:    }
+        -:   50:
+        -:   51:    // Check for tie
+  5066314:   52:    if (isFull()) {
+   494494:   53:        return GameResult::TIE;
+        -:   54:    }
+        -:   55:
+  4571820:   56:    return GameResult::ONGOING;
+        -:   57:}
+        -:   58:
+  5087600:   59:bool GameBoard::isFull() const {
+ 11061039:   60:    for (int i = 0; i < BOARD_SIZE; i++) {
+ 33250125:   61:        for (int j = 0; j < BOARD_SIZE; j++) {
+ 27276686:   62:            if (board[i][j] == ' ') {
+  4593106:   63:                return false;
+        -:   64:            }
+        -:   65:        }
+        -:   66:    }
+   494494:   67:    return true;
+        -:   68:}
+        -:   69:
+     1389:   70:std::vector<std::pair<int, int>> GameBoard::getAvailableMoves() const {
+     1389:   71:    std::vector<std::pair<int, int>> moves;
+     5556:   72:    for (int i = 0; i < BOARD_SIZE; i++) {
+    16668:   73:        for (int j = 0; j < BOARD_SIZE; j++) {
+    12501:   74:            if (board[i][j] == ' ') {
+     8097:   75:                moves.push_back({i, j});
+        -:   76:            }
+        -:   77:        }
+        -:   78:    }
+     1389:   79:    return moves;
+    =====:   80:}
+        -:   81:
+    24969:   82:std::vector<std::vector<char>> GameBoard::getBoard() const {
+    24969:   83:    return board;
+        -:   84:}
+        -:   85:
+      606:   86:void GameBoard::setBoard(const std::vector<std::vector<char>>& newBoard) {
+     606*:   87:    if (newBoard.size() == BOARD_SIZE && newBoard[0].size() == BOARD_SIZE) {
+      606:   88:        board = newBoard;
+        -:   89:    }
+      606:   90:}
