@@ -1,0 +1,56 @@
+name: Advanced Tic Tac Toe CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          libgtest-dev \
+          qt6-base-dev \
+          qt6-tools-dev \
+          clang-tidy \
+          clang-format \
+          pkg-config \
+          gcovr
+
+    - name: Configure CMake
+      run: |
+        cmake -S ci_cmake_config \
+         -B build \
+         -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+          -DENABLE_TESTING=ON \
+      
+    - name: Build project
+      run: |
+        cmake --build ${{github.workspace}}/build \
+          --config ${{env.BUILD_TYPE}} \
+          --parallel $(nproc)
+      
+    - name: Run unit tests for specific components
+      working-directory: ${{github.workspace}}/build
+      run: |
+        echo "Running tests for core components..."
+        ctest -R "AIPlayer|GameBoard|GameHistory|GameStack|UserManager" \
+          -C ${{env.BUILD_TYPE}} \
+          --output-on-failure \
+          --verbose
