@@ -1,0 +1,163 @@
+        -:    0:Source:E:/TicTacToe_Clean/core/src/AIPlayer.cpp
+        -:    0:Graph:./AIPlayer.gcno
+        -:    0:Data:./AIPlayer.gcda
+        -:    0:Runs:2
+        -:    0:Source is newer than graph
+        -:    1:#include "AIPlayer.h"
+        -:    2:#include <iostream>
+        -:    3:#include <cstdlib>
+        -:    4:#include <ctime>
+        -:    5:#include <algorithm>
+        -:    6:
+      448:    7:AIPlayer::AIPlayer(char aiSym, char humanSym, DifficultyLevel difficulty)
+      448:    8:    : aiSymbol(aiSym), humanSymbol(humanSym), currentDifficulty(difficulty) {
+      448:    9:    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+      448:   10:}
+        -:   11:
+       38:   12:void AIPlayer::setDifficulty(DifficultyLevel difficulty) {
+       38:   13:    currentDifficulty = difficulty;
+       38:   14:}
+        -:   15:
+     1709:   16:void AIPlayer::pushAIMove(int row, int col) {
+     1709:   17:    aiMoveHistory.push({row, col});
+     1709:   18:}
+        -:   19:
+       16:   20:std::pair<int, int> AIPlayer::popAIMove() {
+       16:   21:    if (!aiMoveHistory.empty()) {
+       14:   22:        auto move = aiMoveHistory.top();
+       14:   23:        aiMoveHistory.pop();
+       14:   24:        return move;
+        -:   25:    }
+        2:   26:    return {-1, -1};
+        -:   27:}
+        -:   28:
+       74:   29:bool AIPlayer::hasAIMoveHistory() {
+       74:   30:    return !aiMoveHistory.empty();
+        -:   31:}
+        -:   32:
+      812:   33:void AIPlayer::clearAIMoveHistory() {
+     2168:   34:    while (!aiMoveHistory.empty()) aiMoveHistory.pop();
+     1356:   35:}
+        -:   36:
+      812:   37:// Check for immediate win or block
+        -:   38:static std::pair<int,int> getCriticalMove(const GameBoard& board, char symbol) {
+     1695:   39:    auto moves = board.getAvailableMoves();
+     1695:   40:    for (auto [r,c] : moves) {
+        -:   41:        GameBoard tmp = board;
+     1695:   42:        tmp.makeMove(r, c, symbol);
+     1691:   43:        if (tmp.checkWin() != GameResult::ONGOING) return {r,c};
+        -:   44:    }
+        -:   45:    return {-1,-1};
+     1695:   46:}
+        -:   47:
+        -:   48:std::pair<int, int> AIPlayer::getBestMove(const GameBoard& board) {
+     1695:   49:    // 1. Try immediate win
+        -:   50:    auto winMove = getCriticalMove(board, aiSymbol);
+     1695:   51:    if (winMove.first != -1) {
+     6780:   52:        pushAIMove(winMove.first, winMove.second);
+    20340:   53:        return winMove;
+    15255:   54:    }
+    10798:   55:    // 2. Block opponent win
+        -:   56:    auto blockMove = getCriticalMove(board, humanSymbol);
+        -:   57:    if (blockMove.first != -1) {
+        -:   58:        pushAIMove(blockMove.first, blockMove.second);
+        -:   59:        return blockMove;
+     1695:   60:    }
+        4:   61:    // 3. Otherwise strategic search
+        -:   62:    auto move = findBestMove(board);
+        -:   63:    if (move.first != -1) pushAIMove(move.first, move.second);
+        -:   64:    return move;
+    1691*:   65:}
+        -:   66:
+     1691:   67:std::pair<int, int> AIPlayer::findBestMove(const GameBoard& board, int forcedChance) {
+        -:   68:    auto moves = board.getAvailableMoves();
+      358:   69:    if (moves.empty()) return {-1,-1};
+      285:   70:
+        -:   71:    int chance = (forcedChance >= 0) ? forcedChance : (std::rand() % 100);
+        -:   72:    int bestVal = std::numeric_limits<int>::min();
+        -:   73:    std::pair<int,int> bestMove = moves[0];
+       73:   74:
+       73:   75:    // Depending on difficulty, randomized chance
+        -:   76:    bool useRandom = (currentDifficulty == DifficultyLevel::EASY && chance < 80)
+      576:   77:                  || (currentDifficulty == DifficultyLevel::MEDIUM && chance < 40)
+      503:   78:                  || (currentDifficulty == DifficultyLevel::HARD && chance < 5);
+      503:   79:
+      503:   80:    if (useRandom) {
+        -:   81:        return moves[std::rand() % moves.size()];
+        -:   82:    }
+        -:   83:
+      503:   84:    int depthLimit = (currentDifficulty == DifficultyLevel::EASY ? 1
+       86:   85:                     : currentDifficulty == DifficultyLevel::MEDIUM ? 2
+       86:   86:                     : 9);
+        -:   87:
+      503:   88:    for (auto [r,c] : moves) {
+       73:   89:        GameBoard tmp = board;
+        -:   90:        tmp.makeMove(r, c, aiSymbol);
+     1333:   91:        int val = (depthLimit < 9)
+        -:   92:            ? minimaxLimited(tmp, 0, false, INT_MIN, INT_MAX, depthLimit)
+      731:   93:            : minimax(tmp, 0, false, INT_MIN, INT_MAX);
+      261:   94:        if (val > bestVal) {
+        -:   95:            bestVal = val;
+        -:   96:            bestMove = {r,c};
+      470:   97:        }
+      470:   98:    }
+        -:   99:    return bestMove;
+     3171:  100:}
+     2701:  101:
+     2701:  102:int AIPlayer::minimax(GameBoard board, int depth, bool isMax, int alpha, int beta) {
+     2701:  103:    GameResult result = board.checkWin();
+        -:  104:    if (result != GameResult::ONGOING) {
+        -:  105:        if (result == GameResult::TIE) return 0;
+        -:  106:        bool aiWon = ((result == GameResult::PLAYER1_WIN && aiSymbol=='X')
+     2701:  107:                   || (result==GameResult::PLAYER2_WIN && aiSymbol=='O'));
+      568:  108:        return aiWon ? 10-depth : depth-10;
+      568:  109:    }
+        -:  110:    if (isMax) {
+     2701:  111:        int best = INT_MIN;
+      470:  112:        for (int r=0;r<3;++r) for (int c=0;c<3;++c) {
+        -:  113:            if (board.getCell(r,c)==' ') {
+        -:  114:                GameBoard tmp=board; tmp.makeMove(r,c,aiSymbol);
+        -:  115:                best = std::max(best, minimax(tmp, depth+1, false, alpha, beta));
+      602:  116:                alpha = std::max(alpha, best);
+       39:  117:                if (beta<=alpha) return best;
+        -:  118:            }
+        -:  119:        }
+        -:  120:        return best;
+      563:  121:    } else {
+      563:  122:        int best = INT_MAX;
+        -:  123:        for (int r=0;r<3;++r) for (int c=0;c<3;++c) {
+     4498:  124:            if (board.getCell(r,c)==' ') {
+     3935:  125:                GameBoard tmp=board; tmp.makeMove(r,c,humanSymbol);
+     3935:  126:                best = std::min(best, minimax(tmp, depth+1, true, alpha, beta));
+     3935:  127:                beta = std::min(beta, best);
+        -:  128:                if (beta<=alpha) return best;
+        -:  129:            }
+     3935:  130:        }
+      772:  131:        return best;
+      772:  132:    }
+        -:  133:}
+     3935:  134:
+      563:  135:int AIPlayer::minimaxLimited(GameBoard board, int depth, bool isMax,
+        -:  136:                             int alpha, int beta, int maxDepth) {
+     1695:  137:    GameResult result = board.checkWin();
+        -:  138:    if (result != GameResult::ONGOING) {
+  7652003:  139:        if (result==GameResult::TIE) return 0;
+        -:  140:        bool aiWon = ((result==GameResult::PLAYER1_WIN && aiSymbol=='X')
+  7652003:  141:                   || (result==GameResult::PLAYER2_WIN && aiSymbol=='O'));
+        -:  142:        return aiWon ? 10-depth : depth-10;
+  7652003:  143:    }
+  3148457:  144:    if (depth>=maxDepth) {
+   493942:  145:        // heuristic: count center preference
+        -:  146:        return (board.getCell(1,1)==aiSymbol?3:0);
+        -:  147:    }
+        -:  148:    return minimax(board, depth, isMax, alpha, beta);
+  4184680:  149:}
+  1530165:  150:
+        -:  151:std::string AIPlayer::difficultyToString(DifficultyLevel diff) {
+  2654515:  152:    switch(diff) {
+  1530605:  153:        case DifficultyLevel::EASY: return "easy";
+        -:  154:        case DifficultyLevel::MEDIUM: return "medium";
+  1123910:  155:        case DifficultyLevel::HARD: return "hard";
+        -:  156:    }
+        -:  157:    return "unknown";
+        -:  158:}
