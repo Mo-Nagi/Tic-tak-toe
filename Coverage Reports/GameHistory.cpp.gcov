@@ -1,0 +1,131 @@
+        -:    0:Source:E:/TicTacToe_Clean/core/src/GameHistory.cpp
+        -:    0:Graph:./GameHistory.gcno
+        -:    0:Data:./GameHistory.gcda
+        -:    0:Runs:2
+        -:    1:#include "GameHistory.h"
+        -:    2:
+      304:    3:GameHistory::GameHistory() : historyFile("game_history.dat") {
+      152:    4:    loadHistory();
+      152:    5:}
+        -:    6:
+     4826:    7:void GameHistory::addGameRecord(const GameRecord& record) {
+     4826:    8:    gameRecords.push_back(record);
+     4826:    9:    saveHistory();
+     4826:   10:}
+        -:   11:
+      180:   12:std::vector<GameRecord> GameHistory::getUserGames(const std::string& username) {
+      180:   13:    std::vector<GameRecord> userGames;
+     6130:   14:    for (const auto& record : gameRecords) {
+     5950:   15:        if (record.player1 == username || record.player2 == username) {
+     2828:   16:            userGames.push_back(record);
+        -:   17:        }
+        -:   18:    }
+      180:   19:    return userGames;
+    =====:   20:}
+        -:   21:
+       46:   22:std::vector<GameRecord> GameHistory::getAllGames() {
+       46:   23:    return gameRecords;
+        -:   24:}
+        -:   25:
+     4826:   26:void GameHistory::saveHistory() {
+     4826:   27:    std::ofstream file(historyFile);
+     4826:   28:    if (!file.is_open()) {
+    #####:   29:        return;
+        -:   30:    }
+        -:   31:
+  1667022:   32:    for (const auto& record : gameRecords) {
+  1662196:   33:        file << record.player1 << "|" << record.player2 << "|"
+  1662196:   34:             << static_cast<int>(record.mode) << "|" << static_cast<int>(record.result) << "|"
+  1662196:   35:             << record.timestamp << "|";
+        -:   36:
+  6648784:   37:        for (int i = 0; i < 3; i++) {
+ 19946352:   38:            for (int j = 0; j < 3; j++) {
+ 14959764:   39:                file << record.finalBoard[i][j];
+        -:   40:            }
+        -:   41:        }
+  1662196:   42:        file << "|";
+        -:   43:
+ 10522584:   44:        for (const auto& move : record.moves) {
+  8860388:   45:            file << move.row << "," << move.col << "," << move.player << ";";
+        -:   46:        }
+  1662196:   47:        file << "\n";
+        -:   48:    }
+        -:   49:
+     4826:   50:    file.close();
+     4826:   51:}
+        -:   52:
+      152:   53:void GameHistory::loadHistory() {
+      152:   54:    std::ifstream file(historyFile);
+      152:   55:    if (!file.is_open()) {
+      138:   56:        return;
+        -:   57:    }
+        -:   58:
+       14:   59:    std::string line;
+     2738:   60:    while (std::getline(file, line)) {
+     2724:   61:        std::istringstream iss(line);
+     2724:   62:        std::string token;
+     2724:   63:        std::vector<std::string> tokens;
+        -:   64:
+    21718:   65:        while (std::getline(iss, token, '|')) {
+    18994:   66:            tokens.push_back(token);
+        -:   67:        }
+        -:   68:
+     2724:   69:        if (tokens.size() >= 6) {
+     2724:   70:            GameRecord record;
+     2724:   71:            record.player1 = tokens[0];
+     2724:   72:            record.player2 = tokens[1];
+     2724:   73:            record.mode = static_cast<GameMode>(std::stoi(tokens[2]));
+     2724:   74:            record.result = static_cast<GameResult>(std::stoi(tokens[3]));
+     2724:   75:            record.timestamp = tokens[4];
+        -:   76:
+     2724:   77:            std::string boardStr = tokens[5];
+     2724:   78:            record.finalBoard.resize(3, std::vector<char>(3));
+    10896:   79:            for (int i = 0; i < 3; i++) {
+    32688:   80:                for (int j = 0; j < 3; j++) {
+    24516:   81:                    record.finalBoard[i][j] = boardStr[i * 3 + j];
+        -:   82:                }
+        -:   83:            }
+        -:   84:
+     2724:   85:            if (tokens.size() > 6) {
+     2650:   86:                std::string movesStr = tokens[6];
+     2650:   87:                std::istringstream moveStream(movesStr);
+     2650:   88:                std::string moveToken;
+        -:   89:
+    16964:   90:                while (std::getline(moveStream, moveToken, ';')) {
+    14314:   91:                    if (!moveToken.empty()) {
+    14314:   92:                        std::istringstream moveDetails(moveToken);
+    14314:   93:                        std::string detail;
+    14314:   94:                        std::vector<std::string> moveData;
+        -:   95:
+    57256:   96:                        while (std::getline(moveDetails, detail, ',')) {
+    42942:   97:                            moveData.push_back(detail);
+        -:   98:                        }
+        -:   99:
+    14314:  100:                        if (moveData.size() == 3) {
+    14314:  101:                            Move move(std::stoi(moveData[0]), std::stoi(moveData[1]), moveData[2][0]);
+    14314:  102:                            record.moves.push_back(move);
+    14314:  103:                        }
+    14314:  104:                    }
+        -:  105:                }
+     2650:  106:            }
+        -:  107:
+     2724:  108:            gameRecords.push_back(record);
+     2724:  109:        }
+     2724:  110:    }
+        -:  111:
+       14:  112:    file.close();
+      152:  113:}
+        -:  114:
+    #####:  115:std::string GameHistory::getCurrentTimestamp() {
+    #####:  116:    auto now = std::chrono::system_clock::now();
+    #####:  117:    auto time_t = std::chrono::system_clock::to_time_t(now);
+    #####:  118:    std::stringstream ss;
+    #####:  119:    ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S");
+    #####:  120:    return ss.str();
+    #####:  121:}
+        -:  122:
+    #####:  123:void GameHistory::loadHistoryIfNeeded() {
+    #####:  124:    if (gameRecords.empty()) {
+    #####:  125:        loadHistory();
+        -:  126:    }
+    #####:  127:}
