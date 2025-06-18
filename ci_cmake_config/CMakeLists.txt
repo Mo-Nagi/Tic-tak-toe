@@ -56,4 +56,8 @@ if(ENABLE_TESTING)
     target_link_libraries(usermanager_test game_core gtest gtest_main)
     add_test(NAME UserManagerTest COMMAND usermanager_test)
 
+    add_executable(integration_test ${CMAKE_SOURCE_DIR}/../tests/integration_tests/IntegrationTests.cpp)
+    target_link_libraries(integration_test game_core gtest gtest_main)
+    add_test(NAME IntegrationTest COMMAND integration_test)
+
 endif()
