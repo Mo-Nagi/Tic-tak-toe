@@ -50,7 +50,7 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: |
         echo "Running tests for core components..."
-        ctest -R "AIPlayer|GameBoard|GameHistory|GameStack" \
+        ctest -R "AIPlayer|GameBoard|GameHistory|GameStack|UserManager" \
           -C ${{env.BUILD_TYPE}} \
           --output-on-failure \
           --verbose
